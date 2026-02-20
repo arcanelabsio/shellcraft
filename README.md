@@ -5,13 +5,12 @@
 Run it on a fresh Mac to get a fully configured developer terminal in under 10 minutes. Run it again on an existing Mac to upgrade everything to the latest version.
 
 ```bash
-# Clone the repo (once)
-git clone https://github.com/your-username/setup-my-workstation.git \
-    ~/workspace/setup-my-workstation
+# Clone the repo (once) 
+git clone git@github.com:ajitgunturi/shellcraft.git
 
-# Run from anywhere — the script changes to $HOME internally
-chmod +x ~/workspace/setup-my-workstation/setup-my-mac.sh
-~/workspace/setup-my-workstation/setup-my-mac.sh
+cd shellcraft
+chmod +x setup-my-mac.sh
+./setup-my-mac.sh
 ```
 
 ---
