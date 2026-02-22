@@ -4,11 +4,17 @@
 
 Run it on a fresh Mac to get a fully configured developer terminal in under 10 minutes. Run it again on an existing Mac to upgrade everything to the latest version.
 
-```bash
-# Clone the repo (once) 
-git clone git@github.com:ajitgunturi/shellcraft.git
+### Option 1 — One-liner (no files saved, nothing to clean up)
 
-cd shellcraft
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/ajitgunturi/shellcraft/main/setup-my-mac.sh)
+```
+
+### Option 2 — Download, inspect, then run (recommended if you want to review first)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ajitgunturi/shellcraft/main/setup-my-mac.sh -o setup-my-mac.sh
+# open setup-my-mac.sh   ← inspect before running
 chmod +x setup-my-mac.sh
 ./setup-my-mac.sh
 ```
