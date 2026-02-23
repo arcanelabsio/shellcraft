@@ -311,8 +311,9 @@ Oh My Zsh sources all `*.zsh` files in this directory automatically.
 
 ```
 setup-my-mac.sh          Main setup and upgrade script
-terminal-exercises.md    6-day hands-on exercise programme for every tool
-k8s-exercises.md         Kubernetes-specific yq & jq exercises (querying/patching manifests)
+exercises/terminal-exercises.md    6-day hands-on exercise programme for every tool
+exercises/k8s-exercises.md         Kubernetes-specific yq & jq exercises (querying/patching manifests)
+CONTRIBUTING.md                    How to add tools, write exercises, and test changes
 README.md                This file
 ```
 
