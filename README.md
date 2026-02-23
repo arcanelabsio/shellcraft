@@ -53,6 +53,7 @@ A terminal that looks and behaves like this:
 | `htop` | `top` | Interactive process monitor |
 | `bat` | `cat` | Syntax-highlighted file viewing |
 | `jq` | — | JSON processing on the command line |
+| `yq` | — | YAML/JSON/TOML processing — same filter syntax as jq |
 | `tldr` | `man` | Practical command examples |
 | `neovim` | `vim` | Modern vim |
 | `tree` | — | Directory tree visualiser |
@@ -310,7 +311,8 @@ Oh My Zsh sources all `*.zsh` files in this directory automatically.
 
 ```
 setup-my-mac.sh          Main setup and upgrade script
-terminal-exercises.md    5-day hands-on exercise programme for every tool
+terminal-exercises.md    6-day hands-on exercise programme for every tool
+k8s-exercises.md         Kubernetes-specific yq & jq exercises (querying/patching manifests)
 README.md                This file
 ```
 

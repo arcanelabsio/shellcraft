@@ -275,7 +275,7 @@ get_tool_cmd() {
     esac
 }
 
-BREW_PACKAGES=(git tmux fzf ripgrep fd bat eza zoxide tldr jq lazygit git-delta htop git-absorb neovim wget tree gnu-sed)
+BREW_PACKAGES=(git tmux fzf ripgrep fd bat eza zoxide tldr jq yq lazygit git-delta htop git-absorb neovim wget tree gnu-sed)
 
 for pkg in "${BREW_PACKAGES[@]}"; do
     if brew list "$pkg" &>/dev/null; then

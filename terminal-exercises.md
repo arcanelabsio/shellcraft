@@ -1,5 +1,5 @@
-# 5-Day Terminal Mastery Exercises
-> Tools installed: eza · bat · fd · rg · fzf · zoxide · tmux · lazygit · git-delta · htop · tldr · jq · zsh-autosuggestions · zsh-syntax-highlighting · powerlevel10k
+# 6-Day Terminal Mastery Exercises
+> Tools installed: eza · bat · fd · rg · fzf · zoxide · tmux · lazygit · git-delta · htop · tldr · jq · yq · zsh-autosuggestions · zsh-syntax-highlighting · powerlevel10k
 
 Each day builds on the previous. Budget ~30 minutes per session.
 
@@ -507,24 +507,20 @@ history | rg "git push"     # your push history
 
 ---
 
-### 5.4 — jq: JSON on the command line
+### 5.4 — jq & yq: intro
 
 ```zsh
-# Basic prettify
+jq --version      # confirm jq is installed
+yq --version      # confirm yq is installed
+
+# Quick taste — prettify JSON
 echo '{"name":"ajit","role":"dev"}' | jq .
 
-# Extract a field
-curl -s https://api.github.com/users/github | jq '.name, .public_repos'
-
-# Filter an array
-echo '[{"id":1,"ok":true},{"id":2,"ok":false}]' | jq '.[] | select(.ok)'
-
-# Combine with fzf
-curl -s https://api.github.com/users/github/repos | \
-    jq '.[].name' | fzf
+# Quick taste — prettify YAML
+echo 'name: ajit\nrole: dev' | yq .
 ```
 
-**Exercise:** Run `jq --version` to confirm it's installed. Then prettify any JSON file in your projects with `bat` (it auto-detects JSON and highlights it).
+**Exercise:** Run both version checks. Then prettify any `.json` file in your projects with `jq .` piped through `bat`. See Day 6 for a full deep-dive into both tools.
 
 ---
 
@@ -618,7 +614,7 @@ cp ~/workspace/setup-my-workstation/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh
 - [ ] Set up a full tmux workspace for a real project
 - [ ] Used `rg` across your whole workspace to find something useful
 - [ ] Searched history with `Ctrl+R` for multi-word fragments
-- [ ] Used `jq` to inspect JSON output
+- [ ] Verified `jq` and `yq` are installed
 - [ ] Added personal aliases to `~/.oh-my-zsh/custom/aliases.zsh` and reloaded
 - [ ] Backed up `aliases.zsh` to the `setup-my-workstation` repo and pushed
 
@@ -682,3 +678,565 @@ cp ~/workspace/setup-my-workstation/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh
 | `ga` | Fuzzy interactive add |
 | `gs` | Fuzzy stash browser |
 | `gd` | Fuzzy diff browser |
+
+---
+
+## Day 6 — jq & yq: Querying JSON and YAML Like a Pro
+
+**Goal:** Slice, filter, reshape, group, and export structured data without leaving the terminal.
+
+> **Setup check:**
+> ```zsh
+> jq --version    # should print jq-1.7 or newer
+> yq --version    # should print v4.x (mikefarah/yq)
+> ```
+
+---
+
+### Sample data files
+
+Create these once and reuse them across all exercises below:
+
+```zsh
+mkdir -p ~/data
+
+# ~/data/people.json — an array of objects
+cat > ~/data/people.json <<'EOF'
+[
+  {"id": 1, "name": "Anjali",  "dept": "eng",     "level": "senior", "salary": 145000, "remote": true},
+  {"id": 2, "name": "Ben",     "dept": "design",   "level": "mid",    "salary": 95000,  "remote": false},
+  {"id": 3, "name": "Cleo",   "dept": "eng",      "level": "mid",    "salary": 110000, "remote": true},
+  {"id": 4, "name": "Diego",  "dept": "eng",      "level": "junior", "salary": 82000,  "remote": false},
+  {"id": 5, "name": "Erin",   "dept": "product",  "level": "senior", "salary": 138000, "remote": true},
+  {"id": 6, "name": "Farrukh","dept": "design",   "level": "senior", "salary": 120000, "remote": true},
+  {"id": 7, "name": "Gina",   "dept": "product",  "level": "junior", "salary": 78000,  "remote": false},
+  {"id": 8, "name": "Hiro",   "dept": "eng",      "level": "senior", "salary": 155000, "remote": true}
+]
+EOF
+
+# ~/data/services.yaml — multiple YAML documents in one file (multi-doc YAML)
+cat > ~/data/services.yaml <<'EOF'
+---
+name: auth-service
+port: 3001
+replicas: 2
+tags: [auth, critical]
+env: {LOG_LEVEL: warn, TIMEOUT: "30s"}
+---
+name: billing-service
+port: 3002
+replicas: 1
+tags: [billing]
+env: {LOG_LEVEL: info, TIMEOUT: "60s"}
+---
+name: notification-service
+port: 3003
+replicas: 3
+tags: [notify, async]
+env: {LOG_LEVEL: debug, TIMEOUT: "10s"}
+EOF
+```
+
+> **For Kubernetes-specific yq exercises** (querying manifests, patching deployments, bumping image tags), see [`k8s-exercises.md`](./k8s-exercises.md).
+
+**Exercise:** Run `bat ~/data/people.json` and `bat ~/data/services.yaml` to confirm the files look right. Notice bat syntax-highlights both JSON and YAML automatically.
+
+---
+
+### 6.1 — jq: Basic Filters
+
+The `.` operator is the identity — it passes input through unchanged. Every jq expression is a filter that transforms JSON.
+
+```zsh
+# Pretty-print (identity filter)
+jq '.' ~/data/people.json
+
+# Extract a single field from all array items
+jq '.[].name' ~/data/people.json
+
+# Extract a specific index
+jq '.[0]' ~/data/people.json          # first person
+jq '.[-1]' ~/data/people.json         # last person
+
+# Slice the array
+jq '.[2:5]' ~/data/people.json        # items at index 2, 3, 4
+
+# Extract multiple fields at once (comma = run both filters)
+jq '.[].name, .[].salary' ~/data/people.json
+
+# Build a new object per item
+jq '.[] | {name, dept}' ~/data/people.json
+
+# Rename keys in the output object
+jq '.[] | {person: .name, department: .dept, pay: .salary}' ~/data/people.json
+```
+
+**Exercise:** Extract just the `name` and `level` of every person as a new JSON object with those exact keys.
+
+---
+
+### 6.2 — jq: Filtering with `select()`
+
+`select(condition)` passes an item through only if the condition is true — it's the `WHERE` clause of jq.
+
+```zsh
+# Remote workers only
+jq '.[] | select(.remote == true)' ~/data/people.json
+
+# Specific department
+jq '.[] | select(.dept == "eng")' ~/data/people.json
+
+# Salary above threshold
+jq '.[] | select(.salary > 100000)' ~/data/people.json
+
+# Combine conditions with `and` / `or`
+jq '.[] | select(.dept == "eng" and .level == "senior")' ~/data/people.json
+
+# Negate with `not`
+jq '.[] | select(.remote | not)' ~/data/people.json
+
+# String contains (test())
+jq '.[] | select(.name | test("^[AE]"))' ~/data/people.json   # names starting with A or E
+```
+
+**Exercise:** Find all engineers earning more than $100k who work remotely. Print only their names.
+
+---
+
+### 6.3 — jq: `map()`, `sort_by()`, `unique_by()`
+
+`map(f)` applies filter `f` to every element — equivalent to `[.[] | f]`.
+
+```zsh
+# map: transform every item
+jq 'map(.name)' ~/data/people.json                  # array of names
+jq 'map(select(.remote))' ~/data/people.json        # filter, keep as array
+jq 'map(.salary) | add' ~/data/people.json          # sum all salaries
+
+# Sort
+jq 'sort_by(.salary)' ~/data/people.json            # ascending by salary
+jq 'sort_by(.salary) | reverse' ~/data/people.json  # descending
+
+# Sort by string field
+jq 'sort_by(.name)' ~/data/people.json
+
+# Unique — deduplicate
+jq '[.[].dept] | unique' ~/data/people.json         # list of distinct departments
+
+# unique_by — keep first occurrence of each group key
+jq 'unique_by(.dept)' ~/data/people.json            # one rep per dept
+
+# min / max
+jq 'min_by(.salary) | {name, salary}' ~/data/people.json
+jq 'max_by(.salary) | {name, salary}' ~/data/people.json
+```
+
+**Exercise:** Sort the people by salary (descending) and print a list of just `name: $salary` pairs.
+
+---
+
+### 6.4 — jq: `group_by()` and Aggregations
+
+`group_by(.key)` splits an array into sub-arrays, one per distinct value of `.key`. Combine with `map` to aggregate.
+
+```zsh
+# Group by department — produces array of arrays
+jq 'group_by(.dept)' ~/data/people.json
+
+# Group and count headcount per dept
+jq 'group_by(.dept) | map({dept: .[0].dept, count: length})' ~/data/people.json
+
+# Group and sum salaries per dept
+jq 'group_by(.dept) | map({
+  dept: .[0].dept,
+  headcount: length,
+  total_salary: (map(.salary) | add),
+  avg_salary: (map(.salary) | add / length)
+})' ~/data/people.json
+
+# Group by dept then level (nested grouping)
+jq 'group_by(.dept) | map({
+  dept: .[0].dept,
+  by_level: (group_by(.level) | map({level: .[0].level, count: length}))
+})' ~/data/people.json
+
+# Top earner per department
+jq 'group_by(.dept) | map(max_by(.salary) | {dept, name, salary})' ~/data/people.json
+```
+
+**Exercise:** Produce a department summary table: `{dept, headcount, avg_salary, remote_count}`. Sort by `avg_salary` descending.
+
+---
+
+### 6.5 — jq: Reshaping and Building Output
+
+Use object construction `{}` and `reduce` to reshape data into any structure.
+
+```zsh
+# Turn array into a lookup map {name: salary}
+jq '[.[] | {(.name): .salary}] | add' ~/data/people.json
+
+# Same but {id: object} lookup
+jq '[.[] | {(.id | tostring): .}] | add' ~/data/people.json
+
+# Flatten nested paths
+jq '.[] | {name, remote_str: (if .remote then "yes" else "no" end)}' ~/data/people.json
+
+# reduce: running total
+jq 'reduce .[] as $p (0; . + $p.salary)' ~/data/people.json   # total payroll
+
+# Add a computed field to every item
+jq 'map(. + {annual_bonus: (.salary * 0.1 | floor)})' ~/data/people.json
+
+# Remove fields
+jq 'map(del(.id, .remote))' ~/data/people.json
+
+# Rename a key
+jq 'map(. + {department: .dept} | del(.dept))' ~/data/people.json
+```
+
+**Exercise:** Add a `tax_bracket` field to every person: `"high"` if salary ≥ 120k, `"mid"` if ≥ 80k, `"low"` otherwise. Print the result as a compact array.
+
+---
+
+### 6.6 — jq: Output Formats and Export
+
+```zsh
+# -r (raw) — strip quotes from strings, useful for shell pipelines
+jq -r '.[].name' ~/data/people.json            # names as plain text, one per line
+
+# -c (compact) — one JSON object per line (NDJSON)
+jq -c '.[]' ~/data/people.json
+
+# -j (raw no newline) — join without trailing newline
+jq -rj '.[].name + "\n"' ~/data/people.json
+
+# @csv — export as CSV
+jq -r '.[] | [.name, .dept, .level, .salary] | @csv' ~/data/people.json
+
+# @tsv — tab-separated (better for `cut`, `awk`, spreadsheets)
+jq -r '.[] | [.name, .dept, .salary] | @tsv' ~/data/people.json
+
+# Add a header row then export to a real .csv file
+jq -r '["name","dept","level","salary"], (.[] | [.name,.dept,.level,.salary]) | @csv' \
+    ~/data/people.json > ~/data/people.csv
+
+bat ~/data/people.csv
+
+# @base64 — encode a field
+jq -r '.[0].name | @base64' ~/data/people.json
+
+# --arg — pass a shell variable into jq
+TARGET_DEPT="eng"
+jq --arg dept "$TARGET_DEPT" '.[] | select(.dept == $dept) | .name' ~/data/people.json
+
+# --argjson — pass a number or boolean
+jq --argjson min 100000 '.[] | select(.salary >= $min) | {name, salary}' ~/data/people.json
+
+# --slurp (-s) — read multiple JSON inputs as a single array
+echo '{"x":1}' > /tmp/a.json
+echo '{"x":2}' > /tmp/b.json
+jq -s '.' /tmp/a.json /tmp/b.json        # merges into one array
+
+# --raw-input (-R) — treat each line as a JSON string
+ls ~ | jq -R '.'                          # each filename becomes a JSON string
+ls ~ | jq -R '.' | jq -s '.'             # collect into a JSON array of filenames
+```
+
+**Exercise:** Export `people.json` to a TSV with columns `name`, `dept`, `salary`. Open it with `bat`. Then re-import the file with `--slurp` and count how many rows you get.
+
+---
+
+### 6.7 — jq: Real-World Pipeline Patterns
+
+```zsh
+# Combine with fzf for interactive JSON browsing
+jq -c '.[]' ~/data/people.json | fzf | jq .   # pick a record, pretty-print it
+
+# Parse a log file (assumes NDJSON — one JSON object per line)
+# Generate a fake NDJSON log first:
+for i in $(seq 1 5); do
+  echo "{\"ts\":\"2024-0$i-01\",\"level\":\"info\",\"msg\":\"request $i\",\"status\":200}"
+done > ~/data/app.log
+echo '{"ts":"2024-06-01","level":"error","msg":"timeout","status":504}' >> ~/data/app.log
+
+# Filter errors from a log
+jq -c 'select(.level == "error")' ~/data/app.log
+
+# Count by status code
+jq -s 'group_by(.status) | map({status: .[0].status, count: length})' ~/data/app.log
+
+# Combine rg + jq: find lines matching a pattern, parse as JSON
+rg '"level":"error"' ~/data/app.log | jq '{ts, msg}'
+
+# Pipe curl output through jq (replace URL with any public API)
+# curl -s 'https://api.github.com/repos/stedolan/jq/releases' | \
+#   jq 'map({tag: .tag_name, date: .published_at}) | .[0:3]'
+```
+
+**Exercise:** From `app.log`, produce a summary `{total_requests, error_count, error_rate_pct}`.
+
+---
+
+### 6.8 — yq: YAML Filtering (same syntax as jq)
+
+`yq` uses the exact same filter syntax as `jq` but operates on YAML files. The key difference: `services.yaml` is a **multi-document** YAML file (three `---` separated documents). Filters apply to each document in turn.
+
+```zsh
+# Pretty-print — all three documents, separated by ---
+yq '.' ~/data/services.yaml
+
+# yq can also read JSON directly — same filters work
+yq '.[0].name' ~/data/people.json
+
+# Extract a field — applied to every document
+yq '.name' ~/data/services.yaml           # all three names
+yq '.port' ~/data/services.yaml           # all three ports
+
+# Target a specific document by index
+yq 'select(document_index == 0)' ~/data/services.yaml    # first doc only
+yq 'select(document_index == 1) | .name' ~/data/services.yaml
+
+# Filter documents by condition
+yq 'select(.replicas > 1)' ~/data/services.yaml
+yq 'select(.replicas > 1) | .name' ~/data/services.yaml
+
+# Nested field (the env map)
+yq '.env.LOG_LEVEL' ~/data/services.yaml          # from all docs
+yq 'select(.name == "billing-service") | .env.TIMEOUT' ~/data/services.yaml
+
+# Array field (tags)
+yq '.tags[]' ~/data/services.yaml                  # every tag across all docs
+yq 'select(document_index == 0) | .tags[]' ~/data/services.yaml
+
+# Check if a tag is present
+yq 'select(.tags[] == "critical") | .name' ~/data/services.yaml
+```
+
+**Exercise:** Find every service with `LOG_LEVEL` set to `debug`. Print `name: port`.
+
+---
+
+### 6.9 — yq: Editing YAML In-Place
+
+`yq -i` edits a file in-place — like `sed -i` but for structured YAML. It parses and re-serialises cleanly, so comments and structure are preserved. In multi-doc YAML, edits apply to every matching document unless you scope with `select()`.
+
+```zsh
+# Work on a copy so the original stays intact
+cp ~/data/services.yaml /tmp/services-edit.yaml
+
+# Update a scalar across all documents
+yq -i '.replicas += 1' /tmp/services-edit.yaml         # bump every service by 1
+yq '.replicas' /tmp/services-edit.yaml                 # verify
+
+# Update only a specific service
+yq -i '(select(.name == "billing-service").replicas) = 4' /tmp/services-edit.yaml
+
+# Update a nested map value
+yq -i '(select(.name == "auth-service").env.LOG_LEVEL) = "debug"' /tmp/services-edit.yaml
+
+# Add a new top-level field to all documents
+yq -i '.enabled = true' /tmp/services-edit.yaml
+
+# Add a new field to only one document
+yq -i '(select(.name == "billing-service").owner) = "finance-team"' /tmp/services-edit.yaml
+
+# Append a tag to an array
+yq -i '(select(.name == "billing-service").tags) += ["urgent"]' /tmp/services-edit.yaml
+
+# Delete a field from all documents
+yq -i 'del(.enabled)' /tmp/services-edit.yaml
+
+# Delete a field from one document
+yq -i 'del(select(.name == "billing-service").owner)' /tmp/services-edit.yaml
+
+# Confirm changes with a diff
+diff <(yq '.' ~/data/services.yaml) <(yq '.' /tmp/services-edit.yaml)
+```
+
+**Exercise:** On `/tmp/services-edit.yaml`: scale `notification-service` to 5 replicas, change all services' `TIMEOUT` to `"45s"`, and add a `monitored: true` field to services with `replicas >= 2`.
+
+---
+
+### 6.10 — yq: Format Conversion
+
+`yq` converts freely between YAML, JSON, TOML, and XML. This is its killer feature over `jq`.
+
+```zsh
+# JSON → YAML
+yq -P '.' ~/data/people.json            # -P = pretty YAML output
+yq -P '.' ~/data/people.json > /tmp/people.yaml
+bat /tmp/people.yaml
+
+# YAML → JSON (single-document)
+yq -o=json 'select(document_index == 0)' ~/data/services.yaml
+
+# YAML → compact JSON (no indentation)
+yq -o=json -I=0 'select(document_index == 0)' ~/data/services.yaml
+
+# Multi-doc YAML → JSON array (wrap all docs in [])
+yq -o=json '[.]' ~/data/services.yaml
+
+# Pipe that JSON array into jq for further processing
+yq -o=json '[.]' ~/data/services.yaml | jq 'map({name, port})'
+
+# Multi-doc YAML → single-doc YAML array (same idea, YAML output)
+yq -o=yaml '[.]' ~/data/services.yaml
+
+# Merge a patch into a document
+cat > /tmp/patch.yaml <<'EOF'
+replicas: 10
+env:
+  LOG_LEVEL: error
+EOF
+yq '. *= load("/tmp/patch.yaml")' <(yq 'select(document_index == 0)' ~/data/services.yaml)
+
+# Convert YAML and save as JSON
+yq -o=json '[.]' ~/data/services.yaml > /tmp/services.json
+bat /tmp/services.json
+```
+
+**Exercise:** Convert `services.yaml` to a JSON array and pipe into `jq` to produce `{name, port, replica_count}` for every service where `replicas >= 2`.
+
+---
+
+### 6.11 — yq: map(), group_by(), sort_by() on YAML arrays
+
+`yq` supports the same collection operations as `jq`.
+
+```zsh
+# Using people.yaml (created in 6.10)
+# List all names
+yq '.[].name' /tmp/people.yaml
+
+# Filter — remote workers only
+yq '.[] | select(.remote == true) | .name' /tmp/people.yaml
+
+# Sort by salary
+yq 'sort_by(.salary) | .[].name' /tmp/people.yaml
+
+# Map to new shape
+yq 'map({"person": .name, "pay": .salary})' /tmp/people.yaml
+
+# Group by dept and count
+yq 'group_by(.dept) | map({"dept": .[0].dept, "count": length})' /tmp/people.yaml
+
+# Services: sort by port number
+yq 'sort_by(.port) | .[].name' ~/data/services.yaml
+
+# Services: filter those with multiple replicas
+yq 'select(.replicas > 1) | .name + " (" + (.replicas | tostring) + " replicas)"' \
+    ~/data/services.yaml
+```
+
+**Exercise:** Using `/tmp/people.yaml`, group by `level` and output `{level, count, avg_salary}` sorted by `avg_salary` descending.
+
+---
+
+### 6.12 — Combining jq + yq in Real Workflows
+
+```zsh
+# Interactive YAML browsing: pick a service, pretty-print it
+yq -o=json '[.]' ~/data/services.yaml | jq -c '.[]' | fzf | jq .
+
+# Audit: which services are under-replicated (replicas < 2)?
+yq 'select(.replicas < 2) | .name' ~/data/services.yaml
+
+# Generate a formatted table of services (yq → jq → column)
+yq -o=json '[.]' ~/data/services.yaml | \
+  jq -r '["Service","Port","Replicas"], (.[] | [.name, (.port|tostring), (.replicas|tostring)]) | @tsv' | \
+  column -t -s $'\t'
+
+# Generate shell exports for every service's port
+yq -o=json '[.]' ~/data/services.yaml | \
+  jq -r '.[] | "export " + (.name | ascii_upcase | gsub("-"; "_")) + "_PORT=" + (.port|tostring)'
+
+# Cross-reference: list remote workers alongside the service they might own
+# (demonstrates combining two data sources via jq)
+jq -r 'map(select(.remote)) | .[].name' ~/data/people.json | \
+  while read name; do
+    echo "$name → $(yq 'select(document_index == 0) | .name' ~/data/services.yaml)"
+  done
+
+# Validate: confirm every service has a port defined
+yq -o=json '[.]' ~/data/services.yaml | \
+  jq '.[] | {name, has_port: (.port != null)}'
+
+# Export services data as CSV (yq to JSON, then jq to CSV)
+yq -o=json '[.]' ~/data/services.yaml | \
+  jq -r '["name","port","replicas"], (.[] | [.name, (.port|tostring), (.replicas|tostring)]) | @csv' \
+  > /tmp/services.csv
+bat /tmp/services.csv
+```
+
+**Exercise:** From `services.yaml`, generate a shell script (`/tmp/service-exports.sh`) that exports each service's port as `export <NAME>_PORT=<port>`. Make the variable names uppercase with hyphens replaced by underscores (e.g. `AUTH_SERVICE_PORT`).
+
+---
+
+### Day 6 Checkpoint
+
+- [ ] Created the sample data files (`people.json`, `services.yaml`)
+- [ ] Used `select()` to filter JSON and multi-doc YAML by multiple conditions
+- [ ] Used `group_by()` + `map()` to aggregate salary data by department
+- [ ] Exported `people.json` to a `.csv` file with a header row
+- [ ] Edited `services.yaml` in-place with `yq -i` (single service and all services)
+- [ ] Converted between YAML and JSON in both directions
+- [ ] Piped `yq -o=json` output into `jq` for a combined query
+- [ ] Generated a formatted table from YAML using `yq` + `jq` + `column`
+- [ ] Generated shell `export` lines from YAML data
+
+> For Kubernetes-specific exercises, continue with [`k8s-exercises.md`](./k8s-exercises.md).
+
+---
+
+### jq Quick Reference
+
+| Filter | What it does |
+|--------|-------------|
+| `.` | Identity — pass through unchanged |
+| `.field` | Extract object field |
+| `.[]` | Iterate array or object values |
+| `.[n]` | Array index (supports negative) |
+| `.[a:b]` | Array slice |
+| `select(cond)` | Pass through only if condition is true |
+| `map(f)` | Apply filter to every element, collect into array |
+| `sort_by(.k)` | Sort array by key |
+| `group_by(.k)` | Split array into groups by key |
+| `unique` / `unique_by(.k)` | Deduplicate |
+| `min_by(.k)` / `max_by(.k)` | Min/max element |
+| `add` | Sum array of numbers (or concat strings/arrays) |
+| `reduce .[] as $x (init; expr)` | Fold/accumulate |
+| `del(.k)` | Remove a field |
+| `. + {k: v}` | Add/overwrite a field |
+| `@csv` / `@tsv` | Encode array as CSV/TSV row |
+| `@base64` / `@uri` | Encode a string |
+| `test("regex")` | Regex match — returns bool |
+
+### jq Flags Quick Reference
+
+| Flag | Purpose |
+|------|---------|
+| `-r` | Raw output — strip JSON string quotes |
+| `-c` | Compact — one value per line, no whitespace |
+| `-s` | Slurp — read all inputs into a single array |
+| `-R` | Raw input — read lines as strings |
+| `--arg name val` | Pass shell string as `$name` |
+| `--argjson name val` | Pass JSON value as `$name` |
+| `-e` | Exit non-zero if output is `null` or `false` |
+
+### yq Quick Reference
+
+| Command | What it does |
+|---------|-------------|
+| `yq '.' file.yaml` | Pretty-print YAML |
+| `yq '.field' file.yaml` | Extract field |
+| `yq -o=json '.' file.yaml` | YAML → JSON |
+| `yq -P '.' file.json` | JSON → pretty YAML |
+| `yq -i '.field = val' file.yaml` | In-place edit |
+| `yq 'del(.field)' file.yaml` | Delete field (stdout) |
+| `yq -i 'del(.field)' file.yaml` | Delete field in-place |
+| `yq 'select(.k == v)' file.yaml` | Filter (multi-doc aware) |
+| `yq 'select(document_index == n)' file.yaml` | Pick nth document |
+| `yq '. *= load("b.yaml")' a.yaml` | Merge b into a |
+| `yq '[.]' multi.yaml` | Collect all docs into array |
+| `yq -I=0` | Compact output (no indent) |
