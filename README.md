@@ -1,6 +1,6 @@
 # Shellcraft
 
-> Built at **[Arcane Labs](https://github.com/arcanelabsio)** — local-first, BYO-AI tools. Sibling projects: [Forge](https://github.com/arcanelabsio/forge), [Longeviti](https://github.com/arcanelabsio/longeviti-framework), [Vael](https://github.com/arcanelabsio/vael).
+> Built at **[Arcane Labs](https://github.com/arcanelabsio)**.
 
 Shellcraft bootstraps and maintains a macOS developer machine with:
 
