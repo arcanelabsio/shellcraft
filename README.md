@@ -1,11 +1,15 @@
 # Shellcraft
 
+> Built at **[Arcane Labs](https://github.com/arcanelabsio)** — local-first, BYO-AI tools. Sibling projects: [Forge](https://github.com/arcanelabsio/forge), [Longeviti](https://github.com/arcanelabsio/longeviti-framework), [Vael](https://github.com/arcanelabsio/vael).
+
 Shellcraft bootstraps and maintains a macOS developer machine with:
 
 - profile-based package selection
 - preview-first execution
 - Shellcraft-managed include files instead of destructive dotfile rewrites
 - a maintainer toolchain for keeping this repo healthy
+
+The **pattern** Shellcraft implements (profile-based bootstrap with preview-first, managed-block adoption) is described separately from this repo's macOS + Homebrew implementation in [DESIGN.md](DESIGN.md) — read it first if you want to port the idea to another environment.
 
 ## Quick Start
 
