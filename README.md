@@ -43,7 +43,7 @@ On macOS, `make` comes from Xcode Command Line Tools. If your machine does not
 have `make` yet, bootstrap Shellcraft once with the remote installer:
 
 ```bash
-URL="https://raw.githubusercontent.com/ajitgunturi/shellcraft/main/setup-my-mac.sh"
+URL="https://raw.githubusercontent.com/arcanelabsio/shellcraft/main/setup-my-mac.sh"
 bash <(curl -fsSL "$URL") --apply --profile core
 ```
 
@@ -60,14 +60,14 @@ make plan PROFILE=core
 Preview-only remote run:
 
 ```bash
-URL="https://raw.githubusercontent.com/ajitgunturi/shellcraft/main/setup-my-mac.sh"
+URL="https://raw.githubusercontent.com/arcanelabsio/shellcraft/main/setup-my-mac.sh"
 bash <(curl -fsSL "$URL")
 ```
 
 Install immediately with the default `core` profile:
 
 ```bash
-URL="https://raw.githubusercontent.com/ajitgunturi/shellcraft/main/setup-my-mac.sh"
+URL="https://raw.githubusercontent.com/arcanelabsio/shellcraft/main/setup-my-mac.sh"
 bash <(curl -fsSL "$URL") --apply --profile core
 ```
 
