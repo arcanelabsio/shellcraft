@@ -18,6 +18,14 @@ expand_profile() {
 	esac
 }
 
+# Formulas a profile entry supersedes and that conflict with it when both are
+# installed (same command name). Shellcraft never uninstalls; it reports.
+formula_replaces() {
+	case "$1" in
+	tlrc) echo "tldr" ;;
+	esac
+}
+
 formula_cmd() {
 	case "$1" in
 	ripgrep) echo "rg" ;;
