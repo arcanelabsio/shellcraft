@@ -7,14 +7,8 @@ setup_test_env() {
     export HOME="$TEST_HOME"
     export PATH="$TEST_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 
-    mkdir -p "$TEST_HOME" "$TEST_BIN" "$TEST_BREW_PREFIX/bin" "$TEST_BREW_PREFIX/opt/fzf"
+    mkdir -p "$TEST_HOME" "$TEST_BIN" "$TEST_BREW_PREFIX/bin"
     touch "$TEST_HOME/.brew-state"
-
-    cat > "$TEST_BREW_PREFIX/opt/fzf/install" <<'EOF'
-#!/usr/bin/env bash
-touch "$HOME/.fzf.zsh"
-EOF
-    chmod +x "$TEST_BREW_PREFIX/opt/fzf/install"
 
     cat > "$TEST_BIN/uname" <<'EOF'
 #!/usr/bin/env bash

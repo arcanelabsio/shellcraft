@@ -461,13 +461,6 @@ install_zsh_stack() {
 	install_or_update_git_repo "https://github.com/romkatv/powerlevel10k.git" "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" "Powerlevel10k"
 	install_or_update_git_repo "https://github.com/zsh-users/zsh-autosuggestions" "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" "zsh-autosuggestions"
 	install_or_update_git_repo "https://github.com/zsh-users/zsh-syntax-highlighting" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" "zsh-syntax-highlighting"
-
-	if command -v fzf >/dev/null 2>&1; then
-		if [[ -x "$BREW_PREFIX/opt/fzf/install" ]] && [[ ! -f "$HOME/.fzf.zsh" ]]; then
-			info "Installing fzf key bindings"
-			"$BREW_PREFIX/opt/fzf/install" --key-bindings --completion --no-update-rc --no-bash --no-fish </dev/null >/dev/null 2>&1 || warn "fzf key binding setup failed"
-		fi
-	fi
 }
 
 apply_config_adoption() {

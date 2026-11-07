@@ -45,7 +45,7 @@ formula_cmd() {
 profile_plugins() {
 	case "$1" in
 	core)
-		printf '%s\n' git z fzf zsh-autosuggestions zsh-syntax-highlighting
+		printf '%s\n' git fzf zsh-autosuggestions zsh-syntax-highlighting
 		;;
 	backend)
 		printf '%s\n' kubectl
@@ -73,7 +73,6 @@ EOF
 	ai)
 		cat <<'EOF'
 alias py="uv run python"
-alias pip="uv pip"
 EOF
 		;;
 	containers)

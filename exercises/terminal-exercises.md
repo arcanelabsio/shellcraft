@@ -666,12 +666,16 @@ commit the file.
 
 | Old | New | Why |
 |-----|-----|-----|
-| `ls` / `ls -la` | `ls` / `ll` | eza: icons, git status, colors |
-| `cat` | `cat` / `bat` | bat: syntax highlight, line numbers |
-| `grep` | `grep` / `rg` | ripgrep: faster, respects .gitignore |
-| `find` | `find` / `fd` | fd: simpler syntax, faster |
+| `ls -la` | `ll` / `la` / `lt` | eza: icons, git status, colors |
+| `cat` | `bat` | bat: syntax highlight, line numbers |
+| `grep` | `rg` | ripgrep: faster, respects .gitignore |
+| `find` | `fd` | fd: simpler syntax, faster |
 | `cd` (repeat) | `z` | zoxide: learned jump |
-| `top` | `top` / `htop` | htop: interactive, mouse support |
+| `top` | `htop` | htop: interactive, mouse support |
+
+Shellcraft doesn't alias `ls`, `cat`, `grep`, `find`, `top`, or `diff`: the
+standard commands keep their usual behavior, and the modern tools are used by
+their own names.
 | `git diff` | `git diff` | same command, delta renders it |
 | `man` | `tldr` | tldr: practical examples first |
 
