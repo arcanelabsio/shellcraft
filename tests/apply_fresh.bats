@@ -43,6 +43,17 @@ setup() {
 	[ ! -e "$HOME/.fzf.zsh" ]
 }
 
+@test "managed zshrc provides git fuzzy helpers and deduplicates PATH" {
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core
+	[ "$status" -eq 0 ]
+
+	run zsh -f -c 'PATH="/usr/bin:/bin:/usr/bin:/bin"; source ~/.zshrc
+		for f in fgb fgl fgs fga fgd extract mkcd; do (( ${+functions[$f]} )) || echo "missing $f"; done
+		print -r -- "$PATH"'
+	[ "$status" -eq 0 ]
+	[ "$output" = "/usr/bin:/bin" ]
+}
+
 @test "profile-aware zsh config only enables backend and container plugins when selected" {
 	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core --profile backend --profile containers
 
