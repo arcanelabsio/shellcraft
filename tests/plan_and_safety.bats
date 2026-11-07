@@ -36,3 +36,20 @@ setup() {
 	assert_file_contains "$HOME/.brew-state" "yq"
 	assert_file_contains "$HOME/.zshrc" "$HOME/.config/shellcraft/zshrc.zsh"
 }
+
+@test "plan reports a deprecated formula that conflicts with its replacement" {
+	echo "tldr" >>"$HOME/.brew-state"
+
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --profile core
+
+	[ "$status" -eq 0 ]
+	[[ "$output" == *"Formula conflicts (resolve before apply)"* ]]
+	[[ "$output" == *"tldr conflicts with tlrc; run: brew uninstall tldr"* ]]
+}
+
+@test "plan has no conflicts section when nothing conflicts" {
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --profile core
+
+	[ "$status" -eq 0 ]
+	[[ "$output" != *"Formula conflicts"* ]]
+}

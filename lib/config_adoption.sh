@@ -186,10 +186,15 @@ apply_managed_file() {
 	fi
 }
 
-append_block_if_missing() {
+# Adds the managed block once. Placement "top" is for files where later
+# settings win (gitconfig, tmux.conf): putting Shellcraft first lets the
+# user's own lines override it. An existing block is never moved.
+add_block_if_missing() {
 	local path="$1"
 	local block="$2"
 	local marker="$3"
+	local placement="${4:-bottom}"
+	local tmpfile
 
 	if [[ -f "$path" ]] && grep -Fq "$marker" "$path"; then
 		return 0
@@ -203,29 +208,39 @@ append_block_if_missing() {
 
 	if [[ -f "$path" ]]; then
 		backup_if_exists "$path"
-		printf '\n%s\n' "$block" >>"$path"
+		if [[ "$placement" == "top" ]]; then
+			tmpfile="$(mktemp "${TMPDIR:-/tmp}/shellcraft-adopt.XXXXXX")"
+			{
+				printf '%s\n\n' "$block"
+				cat "$path"
+			} >"$tmpfile"
+			cat "$tmpfile" >"$path"
+			rm -f "$tmpfile"
+		else
+			printf '\n%s\n' "$block" >>"$path"
+		fi
 	else
 		printf '%s\n' "$block" >"$path"
 	fi
 }
 
 apply_top_level_adoption() {
-	append_block_if_missing "$HOME/.zprofile" "# >>> shellcraft >>>
+	add_block_if_missing "$HOME/.zprofile" "# >>> shellcraft >>>
 [[ -f \"$HOME/.config/shellcraft/zprofile.sh\" ]] && source \"$HOME/.config/shellcraft/zprofile.sh\"
 # <<< shellcraft <<<" "# >>> shellcraft >>>"
 
-	append_block_if_missing "$HOME/.zshrc" "# >>> shellcraft >>>
+	add_block_if_missing "$HOME/.zshrc" "# >>> shellcraft >>>
 [[ -f \"$HOME/.config/shellcraft/zshrc.zsh\" ]] && source \"$HOME/.config/shellcraft/zshrc.zsh\"
 # <<< shellcraft <<<" "# >>> shellcraft >>>"
 
-	append_block_if_missing "$HOME/.gitconfig" "# >>> shellcraft >>>
+	add_block_if_missing "$HOME/.gitconfig" "# >>> shellcraft >>>
 [include]
     path = ~/.config/shellcraft/gitconfig
-# <<< shellcraft <<<" "path = ~/.config/shellcraft/gitconfig"
+# <<< shellcraft <<<" "path = ~/.config/shellcraft/gitconfig" top
 
-	append_block_if_missing "$HOME/.tmux.conf" "# >>> shellcraft >>>
+	add_block_if_missing "$HOME/.tmux.conf" "# >>> shellcraft >>>
 source-file ~/.config/shellcraft/tmux.conf
-# <<< shellcraft <<<" "source-file ~/.config/shellcraft/tmux.conf"
+# <<< shellcraft <<<" "source-file ~/.config/shellcraft/tmux.conf" top
 }
 
 apply_managed_files() {
