@@ -28,6 +28,21 @@ setup() {
 	assert_file_contains "$HOME/.brew-state" "markdownlint-cli"
 }
 
+@test "managed zshrc leaves standard commands unaliased and initialises each tool once" {
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core --profile ai
+	[ "$status" -eq 0 ]
+
+	run zsh -f -c 'source ~/.zshrc; for a in ls cat grep find top diff pip; do alias "$a"; done'
+	[ "$status" -ne 0 ] # alias returns non-zero for every undefined name
+	[ -z "$output" ]
+
+	local zshrc="$HOME/.config/shellcraft/zshrc.zsh"
+	[[ "$(cat "$zshrc")" != *".fzf.zsh"* ]]
+	! grep -Eq '^ +z$' "$zshrc" || false
+	assert_file_contains "$zshrc" 'eval "$(zoxide init zsh)"'
+	[ ! -e "$HOME/.fzf.zsh" ]
+}
+
 @test "profile-aware zsh config only enables backend and container plugins when selected" {
 	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core --profile backend --profile containers
 

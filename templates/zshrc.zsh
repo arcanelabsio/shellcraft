@@ -33,24 +33,23 @@ setopt HIST_FIND_NO_DUPS
 setopt HIST_EXPIRE_DUPS_FIRST
 setopt EXTENDED_HISTORY
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 
-alias ls="eza --icons --group-directories-first"
+# Modern tools get their own names; standard commands (ls, cat, grep, find,
+# top, diff) are left alone so pasted commands and muscle memory still work.
 alias ll="eza -la --icons --group-directories-first"
 alias lt="eza -la --icons --tree --level=2"
 alias la="eza -a --icons --group-directories-first"
-alias cat="bat --paging=never"
-alias grep="rg"
-alias find="fd"
-alias top="htop"
-alias diff="delta"
 alias reload="source ~/.zshrc"
 alias cls="clear"
 
 mkcd() { mkdir -p "$1" && cd "$1"; }
+
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init zsh)"
+fi
 
 __PROFILE_SNIPPETS__
 
