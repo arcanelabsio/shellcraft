@@ -245,6 +245,9 @@ print_plan() {
 
 	print_list "Selected formulas" "${SELECTED_FORMULAS[@]}"
 	print_list "Formulas to install" "${FORMULAS_TO_INSTALL[@]}"
+	if [[ ${#FORMULA_CONFLICTS[@]} -gt 0 ]]; then
+		print_list "Formula conflicts (resolve before apply)" "${FORMULA_CONFLICTS[@]}"
+	fi
 	print_list "Selected formulas already installed" "${FORMULAS_INSTALLED[@]}"
 	print_list "Selected formulas to upgrade" "${FORMULAS_TO_UPGRADE[@]}"
 	print_list "Managed files to create" "${MANAGED_CREATE_ACTIONS[@]}"
@@ -355,7 +358,7 @@ ensure_homebrew() {
 }
 
 install_formulas() {
-	local formula
+	local formula replaced
 
 	section "Profiles"
 
@@ -365,6 +368,10 @@ install_formulas() {
 			success "$formula installed"
 		else
 			fail "$formula installation failed"
+			replaced="$(formula_replaces "$formula")"
+			if [[ -n "$replaced" ]] && formula_installed "$replaced"; then
+				warn "$replaced is installed and conflicts with $formula; run: brew uninstall $replaced"
+			fi
 		fi
 	done
 

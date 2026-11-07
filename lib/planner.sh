@@ -9,6 +9,7 @@ SELECTED_SNIPPETS=()
 FORMULAS_TO_INSTALL=()
 FORMULAS_INSTALLED=()
 FORMULAS_TO_UPGRADE=()
+FORMULA_CONFLICTS=()
 
 array_contains() {
 	local needle="$1"
@@ -154,6 +155,7 @@ compute_brew_plan() {
 	FORMULAS_TO_INSTALL=()
 	FORMULAS_INSTALLED=()
 	FORMULAS_TO_UPGRADE=()
+	FORMULA_CONFLICTS=()
 
 	if ! brew_available; then
 		FORMULAS_TO_INSTALL=("${SELECTED_FORMULAS[@]}")
@@ -170,6 +172,15 @@ compute_brew_plan() {
 			fi
 		else
 			FORMULAS_TO_INSTALL+=("$formula")
+			note_formula_conflict "$formula"
 		fi
 	done
+}
+
+note_formula_conflict() {
+	local replaced
+	replaced="$(formula_replaces "$1")"
+	if [[ -n "$replaced" ]] && formula_installed "$replaced"; then
+		FORMULA_CONFLICTS+=("$replaced conflicts with $1; run: brew uninstall $replaced")
+	fi
 }

@@ -26,6 +26,27 @@ setup() {
 	assert_file_contains "$HOME/.brew-state" "gh"
 	assert_file_contains "$HOME/.brew-state" "shellcheck"
 	assert_file_contains "$HOME/.brew-state" "markdownlint-cli"
+	assert_file_contains "$HOME/.brew-state" "tlrc"
+}
+
+@test "managed gitignore keeps secrets out but lets env templates and shared editor config through" {
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core
+	[ "$status" -eq 0 ]
+
+	local repo="$BATS_TEST_TMPDIR/repo"
+	git init -q "$repo"
+	ignored() {
+		git -C "$repo" -c core.excludesFile="$HOME/.config/shellcraft/gitignore_global" \
+			check-ignore -q --no-index "$1"
+	}
+
+	ignored .env
+	ignored .env.local
+	ignored .vscode/settings.json
+	! ignored .env.example || false
+	! ignored .env.sample || false
+	! ignored .env.template || false
+	! ignored .vscode/extensions.json || false
 }
 
 @test "profile-aware zsh config only enables backend and container plugins when selected" {
