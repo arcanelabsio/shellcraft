@@ -195,7 +195,9 @@ append_block_if_missing() {
 		return 0
 	fi
 
-	if [[ -f "$path" ]] && grep -Fq "$block" "$path"; then
+	# Whole-block match: grep -F would treat each line of a multi-line block as a
+	# separate pattern, so any unrelated "[include]" line would count as adopted.
+	if [[ -f "$path" ]] && [[ "$(<"$path")" == *"$block"* ]]; then
 		return 0
 	fi
 

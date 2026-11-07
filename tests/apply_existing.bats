@@ -33,6 +33,19 @@ EOF
 	[ "$(grep -c "$HOME/.config/shellcraft/zshrc.zsh" "$HOME/.zshrc")" -eq 1 ]
 }
 
+@test "an unrelated include in the existing gitconfig does not count as adopted" {
+	cat >"$HOME/.gitconfig" <<'EOF'
+[include]
+    path = ~/.gitconfig-personal
+EOF
+
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core
+	[ "$status" -eq 0 ]
+
+	assert_file_contains "$HOME/.gitconfig" "path = ~/.config/shellcraft/gitconfig"
+	assert_file_contains "$HOME/.gitconfig" "path = ~/.gitconfig-personal"
+}
+
 install_fake_oh_my_zsh() {
 	mkdir -p "$HOME/.oh-my-zsh"
 	cat >"$HOME/.oh-my-zsh/oh-my-zsh.sh" <<'EOF'
