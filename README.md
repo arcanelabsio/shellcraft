@@ -167,9 +167,23 @@ Managed files:
 - `gitignore_global`
 - `state.env`
 
-User-owned file:
+User-owned files (Shellcraft reads them, never writes them):
 
-- `local.zsh`
+- `local.zsh`: per-machine shell settings, sourced at the end of `zshrc.zsh`
+- `local.Brewfile`: per-machine formulas, added to whatever profiles you select
+
+```ruby
+# ~/.config/shellcraft/local.Brewfile
+brew "ffmpeg"
+brew "cocoapods"
+```
+
+`make plan` lists these under "Formulas from local.Brewfile", `make install`
+installs them, and `make doctor` checks them by formula (a formula's command
+can differ from its name, e.g. `cocoapods` → `pod`). Only `brew` lines are
+used; `cask`/`tap`/`mas`/`vscode` lines are reported as skipped. To keep both
+files across machines, keep them in a private repo and symlink them into
+`~/.config/shellcraft/`.
 
 Top-level files are adopted via a single include/source block:
 

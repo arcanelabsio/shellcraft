@@ -84,8 +84,16 @@ EOF
 }
 
 read_profile_formulas() {
-	local profile="$1"
-	local brewfile="$SCRIPT_DIR/profiles/${profile}.Brewfile"
+	read_brewfile_formulas "$SCRIPT_DIR/profiles/${1}.Brewfile"
+}
+
+# User-owned per-machine formulas. Shellcraft reads this file, never writes it.
+local_brewfile_path() {
+	printf '%s\n' "$HOME/.config/shellcraft/local.Brewfile"
+}
+
+read_brewfile_formulas() {
+	local brewfile="$1"
 	local line formula
 
 	if [[ ! -f "$brewfile" ]]; then

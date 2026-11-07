@@ -58,6 +58,16 @@ run_doctor() {
 	fi
 
 	for formula in "${SELECTED_FORMULAS[@]}"; do
+		if is_local_formula "$formula"; then
+			# Local formulas may not ship a command named after them (cocoapods -> pod).
+			if brew_available && formula_installed "$formula"; then
+				success "$formula installed (local.Brewfile)"
+			else
+				DOCTOR_MISSING_FORMULAS+=("$formula")
+				fail "$formula not installed (local.Brewfile)"
+			fi
+			continue
+		fi
 		cmd="$(formula_cmd "$formula")"
 		verify_formula_access "$formula" "$cmd"
 	done
