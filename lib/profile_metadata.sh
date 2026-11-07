@@ -29,6 +29,7 @@ formula_cmd() {
 	bats-core) echo "bats" ;;
 	markdownlint-cli) echo "markdownlint" ;;
 	go-task) echo "task" ;;
+	tlrc) echo "tldr" ;;
 	*) echo "$1" ;;
 	esac
 }
