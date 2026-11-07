@@ -1,18 +1,24 @@
 # Shellcraft managed zshrc
 export SHELLCRAFT_HOME="$HOME/.config/shellcraft"
-export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME="powerlevel10k/powerlevel10k"
 
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# An existing ~/.zshrc may already load Oh My Zsh before this block runs.
+# Loading it again resets the user's plugins and re-runs p10k's instant
+# prompt mid-startup, so only load it when it isn't loaded yet.
+if (( ! ${+functions[omz]} )); then
+    export ZSH="$HOME/.oh-my-zsh"
+    ZSH_THEME="powerlevel10k/powerlevel10k"
 
-plugins=(
+    if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+      source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+    fi
+
+    plugins=(
 __PLUGINS__
-)
+    )
 
-if [[ -f "$ZSH/oh-my-zsh.sh" ]]; then
-    source "$ZSH/oh-my-zsh.sh"
+    if [[ -f "$ZSH/oh-my-zsh.sh" ]]; then
+        source "$ZSH/oh-my-zsh.sh"
+    fi
 fi
 
 HISTFILE=~/.zsh_history
