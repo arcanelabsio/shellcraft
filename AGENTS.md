@@ -9,7 +9,7 @@ Shellcraft bootstraps and maintains a macOS developer machine. The repo's job is
 ## Key Rules
 
 - **Preview before apply.** `--plan` is the default mode of `setup-my-mac.sh`. Any new capability must have a dry-run / plan path before an apply path. Never introduce an apply-only command.
-- **Managed-block dotfiles, never wholesale rewrites.** Shellcraft adopts `~/.zprofile`, `~/.zshrc`, `~/.gitconfig`, `~/.tmux.conf` by appending a single include/source block. User content outside the managed block must survive every run. The adoption logic lives in `lib/config_adoption.sh` — do not bypass it.
+- **Managed-block dotfiles, never wholesale rewrites.** Shellcraft adopts `~/.zprofile`, `~/.zshrc`, `~/.gitconfig`, `~/.tmux.conf` by adding a single include/source block (first in gitconfig/tmux.conf so user settings win, last in zsh files; see ADR-0004). User content outside the managed block must survive every run. The adoption logic lives in `lib/config_adoption.sh` — do not bypass it.
 - **Opt-in for anything with side effects on the user's identity or environment.** Login shell change (`SET_DEFAULT_SHELL`), font install (`WITH_FONTS`), GUI-assisted Xcode CLT install (`ALLOW_GUI_INSTALLS`) all default to off.
 - **Never auto-fill git identity.** If `user.name` / `user.email` are missing, report it. Don't invent a placeholder.
 - **Profiles are additive.** A `PROFILE=core,backend` install must not uninstall anything from `core`. Removal is explicit and user-driven, not inferred.
