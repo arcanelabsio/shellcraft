@@ -33,6 +33,39 @@ EOF
 	[ "$(grep -c "$HOME/.config/shellcraft/zshrc.zsh" "$HOME/.zshrc")" -eq 1 ]
 }
 
+@test "user settings in gitconfig and tmux.conf take precedence over managed defaults" {
+	cat >"$HOME/.gitconfig" <<'EOF'
+[core]
+    editor = vim
+EOF
+	echo 'set -g history-limit 1234' >"$HOME/.tmux.conf"
+
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core
+	[ "$status" -eq 0 ]
+
+	# The managed gitconfig sets core.editor = nvim; the user's value must win.
+	[ "$(git config --global core.editor)" = "vim" ]
+	[ "$(head -n 1 "$HOME/.tmux.conf")" = "# >>> shellcraft >>>" ]
+	[ "$(tail -n 1 "$HOME/.tmux.conf")" = "set -g history-limit 1234" ]
+}
+
+@test "an existing managed block is left where it is" {
+	cat >"$HOME/.gitconfig" <<'EOF'
+[core]
+    editor = vim
+# >>> shellcraft >>>
+[include]
+    path = ~/.config/shellcraft/gitconfig
+# <<< shellcraft <<<
+EOF
+	cp "$HOME/.gitconfig" "$BATS_TEST_TMPDIR/gitconfig.before"
+
+	run bash "$BATS_TEST_DIRNAME/../setup-my-mac.sh" --apply --profile core
+	[ "$status" -eq 0 ]
+
+	cmp -s "$HOME/.gitconfig" "$BATS_TEST_TMPDIR/gitconfig.before"
+}
+
 install_fake_oh_my_zsh() {
 	mkdir -p "$HOME/.oh-my-zsh"
 	cat >"$HOME/.oh-my-zsh/oh-my-zsh.sh" <<'EOF'

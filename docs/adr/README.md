@@ -13,3 +13,4 @@ Numbered records of architectural decisions in this repo. Each ADR captures the 
 - [ADR-0001](0001-preview-first-default.md) — `--plan` is the default; apply is explicit.
 - [ADR-0002](0002-managed-block-dotfile-adoption.md) — Dotfiles are adopted via single include block, never overwritten.
 - [ADR-0003](0003-macos-homebrew-only-scope.md) — macOS + Homebrew only; Linux, paid tools, sign-in defaults are out of scope.
+- [ADR-0004](0004-managed-block-placement.md) — Refines ADR-0002: managed blocks go first in gitconfig/tmux.conf so user settings win; `.zshrc` stays last.
