@@ -4,6 +4,8 @@
 PLANNER_ERROR=""
 SELECTED_PROFILES=()
 SELECTED_FORMULAS=()
+LOCAL_FORMULAS=()
+LOCAL_SKIPPED_LINES=0
 SELECTED_PLUGINS=()
 SELECTED_SNIPPETS=()
 FORMULAS_TO_INSTALL=()
@@ -90,6 +92,38 @@ collect_selected_formulas() {
 $(read_profile_formulas "$profile")
 EOF
 	done
+
+	collect_local_formulas
+}
+
+collect_local_formulas() {
+	local brewfile formula
+
+	LOCAL_FORMULAS=()
+	LOCAL_SKIPPED_LINES=0
+	brewfile="$(local_brewfile_path)"
+	[[ -f "$brewfile" ]] || return 0
+
+	while IFS= read -r formula; do
+		[[ -n "$formula" ]] || continue
+		LOCAL_FORMULAS+=("$formula")
+		if append_unique "$formula" "${SELECTED_FORMULAS[@]}"; then
+			SELECTED_FORMULAS+=("$formula")
+		fi
+	done <<EOF
+$(read_brewfile_formulas "$brewfile")
+EOF
+
+	# Casks and taps are outside Shellcraft's scope (ADR-0003); say so in the plan.
+	LOCAL_SKIPPED_LINES="$(grep -Ec '^[[:space:]]*(cask|tap|mas|vscode)[[:space:]]' "$brewfile" || true)"
+}
+
+is_local_formula() {
+	local formula
+	for formula in "${LOCAL_FORMULAS[@]}"; do
+		[[ "$formula" == "$1" ]] && return 0
+	done
+	return 1
 }
 
 collect_selected_plugins() {

@@ -244,6 +244,12 @@ print_plan() {
 	fi
 
 	print_list "Selected formulas" "${SELECTED_FORMULAS[@]}"
+	if [[ -f "$(local_brewfile_path)" ]]; then
+		print_list "Formulas from local.Brewfile" "${LOCAL_FORMULAS[@]}"
+		if [[ $LOCAL_SKIPPED_LINES -gt 0 ]]; then
+			echo "local.Brewfile: $LOCAL_SKIPPED_LINES cask/tap/mas/vscode line(s) skipped; Shellcraft installs formulas only"
+		fi
+	fi
 	print_list "Formulas to install" "${FORMULAS_TO_INSTALL[@]}"
 	print_list "Selected formulas already installed" "${FORMULAS_INSTALLED[@]}"
 	print_list "Selected formulas to upgrade" "${FORMULAS_TO_UPGRADE[@]}"
